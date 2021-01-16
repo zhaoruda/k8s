@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-fronted
+  namespace: dev
+  labels:
+    name: nginx-fronted
+spec:
+  containers:
+    - name: fronted
+      image: nginx:1.19.6
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 80
