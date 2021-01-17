@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: config-map-pod-volume
+  namespace: dev
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:1.19.6
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: config-volume
+          mountPath: /usr/subPath
+          subPath: subPath
+  volumes:
+    - name: config-volume
+      configMap:
+        name: literal-config
+        items:
+          - key: name
+            path: subPath

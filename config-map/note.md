@@ -114,7 +114,89 @@ spec:
 kubectl exec config-map-pod -n dev env
 ```
 
+#### 使用 volume 将 ConfigMap 作为文件或目录直接挂载
+##### ConfigMap直接挂载到Pod到目录中
+将ConfigMap直接挂载到Pod到目录时，ConfigMap中到每个key-value都会生成一个文件，文件名为key，文件内容为value。
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: config-map-pod-volume
+  namespace: dev
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:1.19.6
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config/
+  volumes:
+    - name: config-volume
+      configMap:
+        name: literal-config
+```
+**该方式挂载时会将/etc/config目录中的内容清空，然后再进行挂载。**
 
+##### ConfigMap中到key载到Pod的一个相对目录中
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: config-map-pod-volume
+  namespace: dev
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:1.19.6
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+  volumes:
+    - name: config-volume
+      configMap:
+        name: literal-config
+        items:
+          - key: name
+            path: subPath
+```
+**该方式挂载时也会将/etc/config目录中的内容清空，然后再进行挂载**
+和上述方式的区别：
+* 该方式必须在volumes中指定path，也就是挂载的相对目录。
+* 该方式只会挂载指定的key，其他的key不会进行挂载
 
+##### 使用 subpath 将 ConfigMap 作为单独的文件挂载到目录
+上述的两种方式进行挂载时都会将挂载目录清空。如果不想对Pod中对目录进行覆盖，只是将ConfigMap中对每个key按照文件对方式挂载到目录中，可以使用
+subpath参数。
 
-
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: config-map-pod-volume
+  namespace: dev
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:1.19.6
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: config-volume
+          mountPath: /usr/subPath
+          subPath: subPath
+  volumes:
+    - name: config-volume
+      configMap:
+        name: literal-config
+        items:
+          - key: name
+            path: subPath
+```
+**使用该方式时volumeMounts对subPath需要和key对应的path保持一致。且该方式在configMap中的值发生改变时无法进行实时更新**
