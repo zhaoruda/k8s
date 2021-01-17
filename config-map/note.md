@@ -60,6 +60,60 @@ data:
 
 其中**data**指定config map中的配置，如果为简单键值对则可以直接配置，若配置为文件则value需要使用**｜**。
 
+## ConfigMap的使用
+ConfigMap有三种在Pod中使用的方式：
+* 设置环境变量
+* 设置容器命令行参数
+* 在Volume中直接挂载文件或目录
+
+但是需要注意的是：
+* ConfigMap必须在Pod引用之前创建
+* 只能引用同一个命名空间的ConfigMap
+* 在Pod中对ConfigMap进行挂载（volumeMount）操作时，在容器内只能挂载为**目录**，无法挂载为**文件**。在挂载到容器内部后，在目录下将包含
+ConfigMap定义的每个item，如果在该目录下原来还有其他文件，则容器内的该目录将被挂载的ConfigMap覆盖。如果要求不覆盖，需要额外的处理。
+
+首先来创建ConfigMap
+```shell script
+kubectl create configmap literal-config --from-literal=name=root --from-literal=password=123 -n dev
+```
+#### 设置环境变量
+Pod的yml文件：
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: config-map-pod
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:1.19.6
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 80
+      env:
+        - name: SPECIAL_LEVEL_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: literal-config
+              key: name
+        - name: SPECIAL_TYPE_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: literal-config
+              key: password
+      envFrom:
+        - configMapRef:
+            name: literal-config
+```
+在该yaml文件中给出了两种使用configMap的方式：
+* 使用env、valueFrom来显示指出使用ConfigMap的哪个配置
+* 使用envFrom来引用ConfigMap中的所有配置
+
+可以使用如下命令的输出结果来验证configMap在pod中被成功引用：
+```shell script
+kubectl exec config-map-pod -n dev env
+```
+
 
 
 
