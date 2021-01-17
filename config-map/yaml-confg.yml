@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yaml-config
+  namespace: dev
+data:
+  user: user
+  pwd: "12345"
+  data-file: |
+    file-key: 890
